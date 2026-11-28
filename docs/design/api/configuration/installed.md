@@ -1,89 +1,55 @@
-# Free / Installed configuration
+# Free / Installed feature state
 
-Status: consumer contract correction under #506  
-Tracking: #444, #506
+Status: correction under #669  
+Tracking: #444, #506, #669
 
-`Free` and `Installed` are useful physical-state row names, but they do not
-imply one particular implementation mechanism.
+Free/Installed is represented by direct suppression of one authored Installed
+history feature.
 
-Choose the configuration target from the model's real CAD intent.
+It is not a two-row configuration and it is not a Configuration Rule.
 
-## Parameter state
+## Native table
 
-The retained HUB75 tube clamp is parameter-driven:
+The minimal table is:
 
 ~~~text
-Free       clamp_bore = tube_d - clamp_interference
-Installed  clamp_bore = tube_d
+Configuration     Suppress: Installed
+Normal                    [x]
 ~~~
 
-The public authoring remains an ordinary Parameter column:
+The checkbox is the feature suppression cell itself.
+
+~~~text
+[x] -> Installed suppressed -> Free
+[ ] -> Installed active     -> Installed
+~~~
+
+No rule, condition, effect or drive operation sits between the checkbox and the
+feature.
+
+## Forge authoring
 
 ~~~python
-clamp.configure(
-    active="Free",
-    columns=(self.clamp_bore,),
+with feature("installed", suppressed=True) as installed:
+    body = body.<generic_post_extrude_edit>(...)
+
+body.configure(
+    active="Normal",
+    columns=(installed,),
     rows={
-        "Free": ("tube_d-clamp_interference",),
-        "Installed": ("tube_d",),
+        "Normal": (True,),
     },
 )
 ~~~
 
-This is not a reason to add a Forge flex/deformation API. The consumer owns its
-parametric geometry.
+If the model later has Small / Medium / Large rows, each row can hold the same
+normal suppression column. Installed remains the same authored feature; Forge
+does not create Free/Installed row pairs.
 
-## Feature state
+## Geometry boundary
 
-Use feature suppression only when the model genuinely has one history operation
-whose presence changes by configuration.
+The configuration mechanism is already sufficient.
 
-Author that operation with stable semantic identity:
-
-~~~python
-with feature("installed", suppressed=True):
-    body = body - installed_cut
-~~~
-
-A reusable occurrence then exposes the same definition-level identity:
-
-~~~python
-clamp.feature("installed")
-~~~
-
-and the final model may use it directly:
-
-~~~python
-model.configure(
-    active="Free",
-    columns=(clamp.feature("installed"),),
-    rows={
-        "Free": (True,),
-        "Installed": (False,),
-    },
-)
-~~~
-
-The boolean is native suppression data:
-
-~~~text
-True   -> feature suppressed
-False  -> feature active
-~~~
-
-No public Configuration Rule or synthetic boolean State object is required.
-
-## Consumer proof versus backend proof
-
-The synthetic `configuration-installed-feature` probe deliberately uses a
-simple extra cut. It proves native identity, initial suppression and saved-row
-switching only.
-
-It is not a mechanical model of a flexible clamp and must not be cited as one.
-
-The consumer-level named-feature proof is the real stepped shifted-axis
-panel-pin pass-through used by the HUB75 frame-coupler family: one revolve
-history feature, Small/Medium suppressed, Large enabled.
-
-The standalone HUB75 tube clamp remains the separate parameter-driven consumer
-described above.
+Issue #669 only still needs to identify the generic post-Extrude solid-edit
+operation that correctly changes the HUB75 clamp geometry while preserving its
+physical intent.

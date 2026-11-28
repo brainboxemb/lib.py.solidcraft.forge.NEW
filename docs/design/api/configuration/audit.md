@@ -1,107 +1,69 @@
 # Configuration API audit
 
 Status: active cleanup  
-Tracking: #444
+Tracking: #444, #669
 
-The configuration surface is being reduced to semantic CAD concepts only.
+The configuration surface stays limited to semantic CAD concepts.
 
 ## Keep
 
-### `model.configure(...)`
+### model.configure(...)
 
-Configuration is legitimate final-model intent.
-
-It owns:
+Configuration owns:
 
 - named rows;
 - one active row;
-- parameter-value targets;
-- feature-suppression targets.
+- Parameter value columns;
+- authored-feature suppression columns.
 
-The model is composed first, configured second, and returned normally.
+### Parameter
 
-### `Parameter`
-
-An existing `Parameter` is already an unambiguous parameter configuration
-target. No `Param(...)` wrapper is needed.
+An existing Parameter is already the configuration target. No Param wrapper is
+needed.
 
 ### authored feature handles
 
-A Shape that represents an already-applied history feature, a handle returned
-by `feature(...)`, or a named reusable-component feature reference is already
-an unambiguous suppression target. No `Suppress(...)` wrapper is needed.
+A handle returned by `feature(...)`, an authored feature Shape, or an exported
+component feature is the direct suppression target. No Suppress wrapper is
+needed.
 
-### named feature authoring/reference
+### feature(name, suppressed=...)
 
-`feature(name, suppressed=False)` is the primary consumer authoring contract
-when one real CAD history operation needs stable semantic identity or an
-explicit initial suppressed state.
+This remains the consumer contract for one real later CAD history operation
+with stable semantic identity.
 
-A reusable component automatically exposes that definition-level identity
-through `occurrence.feature(name)`.
+## Installed state correction
 
-`Shape.export_feature(name)` remains the lower-level compatibility path for an
-already-authored feature Shape.
+Issue #669 confirms that Installed does not require another public state or rule
+abstraction.
 
-## Remove
-
-### `Configure(model, ...)`
-
-The wrapper makes configuration appear to produce another model object.
-
-Replace with:
-
-~~~python
-model.configure(...)
-return model
-~~~
-
-### `Param(...)`
-
-Redundant around an existing `Parameter` handle.
-
-### `Suppress(...)`
-
-Redundant when a feature handle is already typed by the object itself.
-
-### `ConfigRule(...)`, `Always()`, `DriveParameter(...)`, `rules=`
-
-These expose one SolidCraft mechanism rather than generic Forge CAD intent.
-
-The old `configuration-installed-state` qualification model depended on this
-surface and is removed rather than preserved as compatibility-driven design.
-
-## Do not introduce
-
-The current use case does not justify separate public:
+One normal row with one direct suppression column is sufficient:
 
 ~~~text
-State
-Toggle
-Bind
-FeatureGroup
+Configuration     Suppress: Installed
+Normal                    [x]
 ~~~
 
-Do not add another abstraction until a concrete CAD model demonstrates a
-semantic requirement that direct parameters, feature identity and
-`model.configure(...)` cannot express.
+The checkbox is the stored suppression cell.
 
-## Backend evidence
+Do not insert a Configuration Rule, drive_suppression, condition/effect
+objects or a second Free/Installed row axis.
 
-The direct `configuration-installed-single-feature` probe proves that
-SolidCraft can configure one real feature through ordinary feature suppression
-without a Configuration Rule. It is backend evidence only; a deliberately
-synthetic probe cannot close a richer motivating consumer use case.
+## Remove / do not restore
 
-The `configuration-installed-group` experiment proves the opposite boundary:
-a timeline folder may group/suppress multiple features manually, but SolidCraft
-0.49 does not accept that folder as a configuration feature target.
+Do not restore the retired broad public wrappers solely for this use case:
 
-That backend distinction must not leak into public Forge syntax.
+~~~text
+Configure(...)
+Param(...)
+Suppress(...)
+ConfigRule(...)
+Always(...)
+DriveParameter(...)
+DriveSuppression(...)
+~~~
 
-## Target public surface
-
-For configuration, the credible public surface is now:
+The credible public surface remains:
 
 ~~~text
 Parameter
@@ -111,4 +73,4 @@ occurrence.feature(name)
 model.configure(...)
 ~~~
 
-Everything else must justify itself independently.
+Any future abstraction must be justified by a separate CAD requirement.
